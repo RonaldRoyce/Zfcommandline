@@ -28,31 +28,11 @@
         "zendframework/zend-crypt": "^3.3"
     },
     "autoload": {
-        "psr-4": {
-        }
+        "psr-4": { "ronaldroyce\\Zfcommandline\\Command\\": "" }
     },
     "autoload-dev": {
         "psr-4": {
         }
     },
-    "extra": [],
-    "scripts": {
-        "cs-check": "phpcs",
-        "cs-fix": "phpcbf",
-        "development-disable": "zf-development-mode disable",
-        "development-enable": "zf-development-mode enable",
-        "development-status": "zf-development-mode status",
-    	"post-install-cmd": [
-      		"vendor/ronaldroyce/zfcommandline/post-install.sh"
-    	],        
-    	"post-udpate-cmd": [
-      		"vendor/ronaldroyce/zfcommandline/post-install.sh"
-    	],        
-	"post-create-project-cmd": [
-            "@development-enable"
-        ],
-        "serve": "php -S 0.0.0.0:8080 -t public public/index.php",
-        "test": "phpunit",
-	"zfcommandline": "vendor/rroyce/zfcommandline/zfcommandline.php"
-     }
+    "extra": []
 }
