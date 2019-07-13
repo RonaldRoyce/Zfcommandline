@@ -30,12 +30,10 @@
     },
     "autoload": {
         "psr-4": {
-            "Zfcommandline\\": "module/Zfcommandline/src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "ZfcommandlineTest\\": "module/Zfcommandline/test/"
         }
     },
     "extra": [],
