@@ -42,7 +42,10 @@
         "development-disable": "zf-development-mode disable",
         "development-enable": "zf-development-mode enable",
         "development-status": "zf-development-mode status",
-        "post-create-project-cmd": [
+    	"post-install-cmd": [
+      		"post-install.sh"
+    	],        
+	"post-create-project-cmd": [
             "@development-enable"
         ],
         "serve": "php -S 0.0.0.0:8080 -t public public/index.php",
