@@ -1,7 +1,7 @@
 {
     "name": "ronaldroyce/zfcommandline",
     "description": "Command-line utility for Zend Framework",
-    "type": "project",
+    "type": "library",
     "license": "BSD-3-Clause",
     "keywords": [
         "framework",
