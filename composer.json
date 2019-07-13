@@ -25,8 +25,7 @@
         "symfony/process": "^4.3",
         "doctrine/doctrine-orm-module": "^2.1",
         "doctrine/migrations": "^2.1",
-        "zendframework/zend-crypt": "^3.3",
-	"rroyce/zfcommandline": "^1.0"
+        "zendframework/zend-crypt": "^3.3"
     },
     "autoload": {
         "psr-4": {
