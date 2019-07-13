@@ -43,7 +43,10 @@
         "development-enable": "zf-development-mode enable",
         "development-status": "zf-development-mode status",
     	"post-install-cmd": [
-      		"bash post-install.sh"
+      		"vendor/ronaldroyce/zfcommandline/post-install.sh"
+    	],        
+    	"post-udpate-cmd": [
+      		"vendor/ronaldroyce/zfcommandline/post-install.sh"
     	],        
 	"post-create-project-cmd": [
             "@development-enable"
