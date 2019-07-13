@@ -1,18 +1,15 @@
 <?php
 
-namespace Zfcommandline\Command;
+namespace RonaldRoyce\Zfcommandline\Command;
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
+use Zend\View\Model\ViewModel;
 use ZF\Configuration\ConfigResource;
 use ZF\Configuration\ConfigWriter;
-use ReflectionClass;
-use Zend\View\Model\ViewModel;
-use Zend\View\Renderer\PhpRenderer;
-use Zend\View\Resolver;
 
 class ModelCreateCommand extends Command {
 	private $serviceManager;
@@ -22,19 +19,19 @@ class ModelCreateCommand extends Command {
 	private $apiNamespace;
 	private $driverName;
 
-        public function __construct($serviceManager, $projectRootDir, $appConfig) {
-                $this->serviceManager = $serviceManager;
-                $this->projectRootDir = $projectRootDir;
-                $this->appConfig = $appConfig;
+	public function __construct($serviceManager, $projectRootDir, $appConfig) {
+		$this->serviceManager = $serviceManager;
+		$this->projectRootDir = $projectRootDir;
+		$this->appConfig = $appConfig;
 
-                $this->appNamespace = $appConfig['zfcommandline']['namespaces']['app'];
-                $this->apiNamespace = $appConfig['zfcommandline']['namespaces']['api'];
+		$this->appNamespace = $appConfig['zfcommandline']['namespaces']['app'];
+		$this->apiNamespace = $appConfig['zfcommandline']['namespaces']['api'];
 
-                parent::__construct();
-        }
+		parent::__construct();
+	}
 
 	protected function configure() {
-                $appNamespace = $this->appConfig['zfcommandline']['namespaces']['app'];
+		$appNamespace = $this->appConfig['zfcommandline']['namespaces']['app'];
 
 		$this
 			->setName(strtolower($appNamespace) . ':model:create')
@@ -70,128 +67,124 @@ class ModelCreateCommand extends Command {
 		$modelName = $input->getArgument('name') . "Model";
 		$tableName = $input->getArgument('table');
 		$factoryName = $modelName . "ControllerFactory";
-		$controllerName = $modelName. "Controller";
+		$controllerName = $modelName . "Controller";
 
 		if (!$this->createModel($modelName, $tableName, $input, $output)) {
 			return;
 		}
 
-                if (!$this->createModelController($modelName, $controllerName, $input, $output)) {
-                        return;
-                }
+		if (!$this->createModelController($modelName, $controllerName, $input, $output)) {
+			return;
+		}
 
 		if (!$this->createModelControllerFactory($modelName, $controllerName, $factoryName, $input, $output)) {
 			return;
 		}
 
-                $this->addToConfig($controllerName, $factoryName, $input, $output);
+		$this->addToConfig($controllerName, $factoryName, $input, $output);
 	}
 
 	protected function addToConfig($controllerName, $factoryName, $input, $output) {
 		$config = $this->serviceManager->get('config');
-        	$writer = $this->serviceManager->get(ConfigWriter::class);
+		$writer = $this->serviceManager->get(ConfigWriter::class);
 
-                $writer->setUseClassNameScalars(true);
+		$writer->setUseClassNameScalars(true);
 		$writer->setUseBracketArraySyntax(true);
 
+		$configResource = new ConfigResource($config, $this->projectRootDir . '/module/' . $this->apiNamespace . '/config/module.config.php', $writer);
 
-            	$configResource = new ConfigResource($config, $this->projectRootDir . '/module/' . $this->apiNamespace . '/config/module.config.php', $writer);
+		$fullClassName = sprintf(
+			'%s\\Controller\\%s',
+			$this->apiNamespace,
+			$controllerName
+		);
 
-	        $fullClassName = sprintf(
-        	    '%s\\Controller\\%s',
-		    $this->apiNamespace,
-	            $controllerName
-	        );
-
-       	 	$factoryClassName = sprintf(
-			'%s\\Factory\\%s', 
+		$factoryClassName = sprintf(
+			'%s\\Factory\\%s',
 			$this->apiNamespace,
 			$factoryName
 		);
 
-                $configResource->patch([
-                        'controllers' => [
-                                'factories' => [
-                                        $fullClassName => $factoryClassName,
-                                ],
-                        ],
-                ], true);
+		$configResource->patch([
+			'controllers' => [
+				'factories' => [
+					$fullClassName => $factoryClassName,
+				],
+			],
+		], true);
 
-        	$configResource->patch([
-            		'service_manager' => [
-                		'factories' => [
-                    			$fullClassName => $factoryClassName,
-                		],
-            		],
-        	], true);
+		$configResource->patch([
+			'service_manager' => [
+				'factories' => [
+					$fullClassName => $factoryClassName,
+				],
+			],
+		], true);
 	}
 
-    	protected function getSourcePath($module, $serviceName)
-    	{
-        	$sourcePath = $this->projectRootDir . "/modules/$module";
+	protected function getSourcePath($module, $serviceName) {
+		$sourcePath = $this->projectRootDir . "/modules/$module";
 
-	        if (! file_exists($sourcePath)) {
-        	    mkdir($sourcePath, 0775, true);
-	        }
+		if (!file_exists($sourcePath)) {
+			mkdir($sourcePath, 0775, true);
+		}
 
-        	return $sourcePath;
+		return $sourcePath;
 	}
 
-	public function createFactoryClass($module, $serviceName)
-    	{
-        	$srcPath = $this->getSourcePath($serviceName);
+	public function createFactoryClass($module, $serviceName) {
+		$srcPath = $this->getSourcePath($serviceName);
 
-        	$classResource = sprintf('%sResource', $serviceName);
-        	$className     = sprintf('%sResourceFactory', $serviceName);
-        	$classPath     = sprintf('%s/%s.php', $srcPath, $className);
+		$classResource = sprintf('%sResource', $serviceName);
+		$className = sprintf('%sResourceFactory', $serviceName);
+		$classPath = sprintf('%s/%s.php', $srcPath, $className);
 
-        	if (file_exists($classPath)) {
-            		throw new Exception\RuntimeException(sprintf(
-                		'The resource factory "%s" already exists',
-                		$className
-            		));
-        	}
+		if (file_exists($classPath)) {
+			throw new Exception\RuntimeException(sprintf(
+				'The resource factory "%s" already exists',
+				$className
+			));
+		}
 
-        	$view = new ViewModel([
-            		'module'        => $module,
-            		'resource'      => $serviceName,
-            		'classfactory'  => $className,
-            		'classresource' => $classResource,
-            		'version'       => '1.0',
-        		]);
-        	if (! $this->createClassFile($view, 'factory', $classPath)) {
-            		throw new Exception\RuntimeException(sprintf(
-                		'Unable to create resource factory "%s"; unable to write file',
-                	$className
-            		));
-        	}
+		$view = new ViewModel([
+			'module' => $module,
+			'resource' => $serviceName,
+			'classfactory' => $className,
+			'classresource' => $classResource,
+			'version' => '1.0',
+		]);
+		if (!$this->createClassFile($view, 'factory', $classPath)) {
+			throw new Exception\RuntimeException(sprintf(
+				'Unable to create resource factory "%s"; unable to write file',
+				$className
+			));
+		}
 
-        	$fullClassName = sprintf(
-        	    '%s\\V%s\\Rest\\%s\\%s',
-        	    $module,
-        	    $this->moduleEntity->getLatestVersion(),
-        	    $serviceName,
-        	    $className
-        	);
+		$fullClassName = sprintf(
+			'%s\\V%s\\Rest\\%s\\%s',
+			$module,
+			$this->moduleEntity->getLatestVersion(),
+			$serviceName,
+			$className
+		);
 
-        	return $fullClassName;
-    	}
+		return $fullClassName;
+	}
 
-    	protected function createClassFile(ViewModel $model, $type, $classPath)
-    	{
-        	$renderer = $this->getRenderer();
-        	$template = $this->injectResolver($renderer, $type);
-        	$model->setTemplate($template);
+	protected function createClassFile(ViewModel $model, $type, $classPath) {
+		$renderer = $this->getRenderer();
+		$template = $this->injectResolver($renderer, $type);
+		$model->setTemplate($template);
 
-        	if (file_put_contents(
-            		$classPath,
-            		'<' . "?php\n" . $renderer->render($model)
-        		)) {
-            		return true;
-        	}
+		if (file_put_contents(
+			$classPath,
+			'<' . "?php\n" . $renderer->render($model)
+		)) {
+			return true;
+		}
 
-        	return false;
-    	}
+		return false;
+	}
 
 	protected function createAppController($controllerName, $model, $input, $output) {
 		$templateFilename = $this->projectRootDir . "/console/Templates/AppController.tpl";

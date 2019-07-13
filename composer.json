@@ -28,7 +28,7 @@
         "zendframework/zend-crypt": "^3.3"
     },
     "autoload": {
-        "psr-4": { "ronaldroyce\\Zfcommandline\\": "" }
+        "psr-4": { "RonaldRoyce\\Zfcommandline\\": "" }
     },
     "autoload-dev": {
         "psr-4": {

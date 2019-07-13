@@ -1,6 +1,6 @@
 <?php
 
-namespace Zfcommandline\Command;
+namespace RonaldRoyce\Zfcommandline\Command;
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -9,38 +9,34 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use ZF\Configuration\ConfigResource;
 use ZF\Configuration\ConfigWriter;
-use ReflectionClass;
-use Zend\View\Model\ViewModel;
-use Zend\View\Renderer\PhpRenderer;
-use Zend\View\Resolver;
 
 class AppRouteCreateCommand extends Command {
 	private $serviceManager;
 	private $projectRootDir;
 	private $appConfig;
 	private $appNamespace;
-        private $driverName;
+	private $driverName;
 
-        public function __construct($serviceManager, $projectRootDir, $appConfig) {
-                $this->serviceManager = $serviceManager;
-                $this->projectRootDir = $projectRootDir;
-                $this->appConfig = $appConfig;
+	public function __construct($serviceManager, $projectRootDir, $appConfig) {
+		$this->serviceManager = $serviceManager;
+		$this->projectRootDir = $projectRootDir;
+		$this->appConfig = $appConfig;
 
-                $this->appNamespace = $appConfig['zfcommandline']['namespaces']['app'];
-                $this->apiNamespace = $appConfig['zfcommandline']['namespaces']['api'];
+		$this->appNamespace = $appConfig['zfcommandline']['namespaces']['app'];
+		$this->apiNamespace = $appConfig['zfcommandline']['namespaces']['api'];
 
-                parent::__construct();
-        }
+		parent::__construct();
+	}
 
 	protected function configure() {
-                $appNamespace = $this->appConfig['zfcommandline']['namespaces']['app'];
+		$appNamespace = $this->appConfig['zfcommandline']['namespaces']['app'];
 
 		$this
 			->setName(strtolower($appNamespace) . ':route:create')
 			->setDescription('Create a new application route')
 			->addArgument('name', InputArgument::REQUIRED, 'Route name')
 			->addArgument('controller', InputArgument::REQUIRED, 'Name of controller')
-                        ->addArgument('action', InputArgument::OPTIONAL, 'Controller action (i.e. index).  Default is \'index\'');
+			->addArgument('action', InputArgument::OPTIONAL, 'Controller action (i.e. index).  Default is \'index\'');
 
 	}
 
@@ -71,74 +67,70 @@ class AppRouteCreateCommand extends Command {
 		$routeControllerName = $input->getArgument('controller');
 		$action = $input->getArgument('action');
 
-		if (!isset($index))
-		{
+		if (!isset($index)) {
 			$action = 'index';
 		}
 
 		$fullControllerClassName = sprintf(
-						'\%s\Controller\%s',
-						$this->appNamespace,
-						$routeControllerName
-					);
+			'\%s\Controller\%s',
+			$this->appNamespace,
+			$routeControllerName
+		);
 
-		if (!class_exists($fullControllerClassName))
-		{
+		if (!class_exists($fullControllerClassName)) {
 			$output->writeln("<error>Controller $fullControllerClassName does not exist</error>");
 			return false;
 		}
 
-                $this->addToConfig($routeName, $routeControllerName, $action, $input, $output);
+		$this->addToConfig($routeName, $routeControllerName, $action, $input, $output);
 	}
 
 	protected function addToConfig($routeName, $routeControllerName, $action, $input, $output) {
 		$config = $this->serviceManager->get('config');
 
 		if (array_key_exists('router', $config) && array_key_exists('routes', $config['router']) &&
-			array_key_exists($routeName, $config['router']['routes']))
-		{
-                        $output->writeln("<error>Route '$routeName' already exists</error>");
-                        $helper = $this->getHelper('question');
-                        $question = new ConfirmationQuestion('Overwrite route?', false);
+			array_key_exists($routeName, $config['router']['routes'])) {
+			$output->writeln("<error>Route '$routeName' already exists</error>");
+			$helper = $this->getHelper('question');
+			$question = new ConfirmationQuestion('Overwrite route?', false);
 
-                        if (!$helper->ask($input, $output, $question)) {
-                                return false;
-                        }
+			if (!$helper->ask($input, $output, $question)) {
+				return false;
+			}
 		}
-			
-        	$writer = $this->serviceManager->get(ConfigWriter::class);
 
-                $writer->setUseClassNameScalars(true);
+		$writer = $this->serviceManager->get(ConfigWriter::class);
+
+		$writer->setUseClassNameScalars(true);
 		$writer->setUseBracketArraySyntax(true);
 
-                $configResource = new ConfigResource($config, $this->projectRootDir . '/module/' . $this->appNamespace . '/config/module.config.php', $writer);
-
+		$configResource = new ConfigResource($config, $this->projectRootDir . '/module/' . $this->appNamespace . '/config/module.config.php', $writer);
 
 		$fullControllerName = sprintf(
-						'\%s\Controller\%s',
-						$this->appNamespace,
-						$routeControllerName
-					);
+			'\%s\Controller\%s',
+			$this->appNamespace,
+			$routeControllerName
+		);
 
-                $configResource->patch([
-			    			'router' => [
-        						'routes' => [
-			            				"$routeName" => [
-			                				'type' => \Zend\Router\Http\Segment::class,
-			                				'options' => [
-                    									'route' => "/$routeName" . "[/:id]",
-			                    						'constraints' => [
-                        									'id' => '[0-9]+',
-				                	    				],
-			        		            				'defaults' => [
-				        	                				'controller' => $fullControllerName,
-												'action' => "$action"
-				                	    				],
-        	        							],
-			            					],
-        							], 
-							], 
-						], true);
+		$configResource->patch([
+			'router' => [
+				'routes' => [
+					"$routeName" => [
+						'type' => \Zend\Router\Http\Segment::class,
+						'options' => [
+							'route' => "/$routeName" . "[/:id]",
+							'constraints' => [
+								'id' => '[0-9]+',
+							],
+							'defaults' => [
+								'controller' => $fullControllerName,
+								'action' => "$action",
+							],
+						],
+					],
+				],
+			],
+		], true);
 
 	}
 }

@@ -1,18 +1,12 @@
 <?php
 
-namespace Zfcommandline\Command;
+namespace RonaldRoyce\Zfcommandline\Command;
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
-use ZF\Configuration\ConfigResource;
-use ZF\Configuration\ConfigWriter;
-use ReflectionClass;
-use Zend\View\Model\ViewModel;
-use Zend\View\Renderer\PhpRenderer;
-use Zend\View\Resolver;
 
 class ViewCreateCommand extends Command {
 	private $serviceManager;
@@ -20,21 +14,21 @@ class ViewCreateCommand extends Command {
 	private $appConfig;
 	private $appNamespace;
 	private $apiNamespace;
-        private $driverName;
+	private $driverName;
 
-        public function __construct($serviceManager, $projectRootDir, $appConfig) {
-                $this->serviceManager = $serviceManager;
-                $this->projectRootDir = $projectRootDir;
-                $this->appConfig = $appConfig;
+	public function __construct($serviceManager, $projectRootDir, $appConfig) {
+		$this->serviceManager = $serviceManager;
+		$this->projectRootDir = $projectRootDir;
+		$this->appConfig = $appConfig;
 
-                $this->appNamespace = $appConfig['zfcommandline']['namespaces']['app'];
-                $this->apiNamespace = $appConfig['zfcommandline']['namespaces']['api'];
+		$this->appNamespace = $appConfig['zfcommandline']['namespaces']['app'];
+		$this->apiNamespace = $appConfig['zfcommandline']['namespaces']['api'];
 
-                parent::__construct();
-        }
+		parent::__construct();
+	}
 
 	protected function configure() {
-                $appNamespace = $this->appConfig['zfcommandline']['namespaces']['app'];
+		$appNamespace = $this->appConfig['zfcommandline']['namespaces']['app'];
 
 		$this
 			->setName(strtolower($appNamespace) . ':view:create')
@@ -69,46 +63,40 @@ class ViewCreateCommand extends Command {
 
 		$viewControllerName = $input->getArgument('controller');
 
-		if (substr($viewControllerName, strlen($viewControllerName) - 10) != "Controller")
-		{
-                        $output->writeln("<error>Controller $fullControllerClassName does not end in 'Controller'</error>");
-                        return false;
-                }
+		if (substr($viewControllerName, strlen($viewControllerName) - 10) != "Controller") {
+			$output->writeln("<error>Controller $fullControllerClassName does not end in 'Controller'</error>");
+			return false;
+		}
 
 		$action = $input->getArgument('action');
 
-		if ($action == "")
-		{
+		if ($action == "") {
 			$action = "index";
 		}
 
 		$fullControllerClassName = sprintf(
-						'\%s\Controller\%s',
-						$this->appNamespace,
-						$viewControllerName
-					);
+			'\%s\Controller\%s',
+			$this->appNamespace,
+			$viewControllerName
+		);
 
-		if (!class_exists($fullControllerClassName))
-		{
+		if (!class_exists($fullControllerClassName)) {
 			$output->writeln("<error>Controller $fullControllerClassName does not exist</error>");
 			return false;
 		}
 
-                $this->createView($viewControllerName, $action, $input, $output);
+		$this->createView($viewControllerName, $action, $input, $output);
 	}
 
-	protected function hyphenateName($str)
-	{
+	protected function hyphenateName($str) {
 		$a = "";
 
-		for ($i = 0; $i < strlen($str); $i++)
-		{
-		        if ($i > 0 && substr($str, $i, 1) >= "A" && substr($str, $i, 1) <= 'Z')
-		        {
-		                $a .= "-";
-		        }
+		for ($i = 0; $i < strlen($str); $i++) {
+			if ($i > 0 && substr($str, $i, 1) >= "A" && substr($str, $i, 1) <= 'Z') {
+				$a .= "-";
+			}
 
-		        $a .= strtolower(substr($str, $i, 1));
+			$a .= strtolower(substr($str, $i, 1));
 		}
 
 		return $a;
@@ -117,14 +105,13 @@ class ViewCreateCommand extends Command {
 	protected function createView($viewControllerName, $action, $input, $output) {
 		$templateFilename = $this->projectRootDir . "/console/Templates/View.tpl";
 
-		$viewDir =  $this->projectRootDir . "/module/" . $this->appNamespace . "/view/" . $this->hyphenateName($this->appNamespace) . "/" .
-				$this->hyphenateName(substr($viewControllerName, 0, strlen($viewControllerName) - 10));
+		$viewDir = $this->projectRootDir . "/module/" . $this->appNamespace . "/view/" . $this->hyphenateName($this->appNamespace) . "/" .
+		$this->hyphenateName(substr($viewControllerName, 0, strlen($viewControllerName) - 10));
 
-		if (!file_exists($viewDir))
-		{
-			mkdir ($viewDir, 0755);
+		if (!file_exists($viewDir)) {
+			mkdir($viewDir, 0755);
 		}
-	
+
 		$viewFilename = $viewDir . "/" . $action . ".phtml";
 
 		if (file_exists($viewFilename)) {
@@ -137,7 +124,7 @@ class ViewCreateCommand extends Command {
 			}
 		}
 
-                $templateContents = file_get_contents($this->projectRootDir . "/console/Templates/View.tpl");
+		$templateContents = file_get_contents($this->projectRootDir . "/console/Templates/View.tpl");
 
 		file_put_contents($viewFilename, $templateContents);
 

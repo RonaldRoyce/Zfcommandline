@@ -1,6 +1,6 @@
 #!/usr/bin/env php
 <?php
-namespace ronaldroyce\Zfcommandline;
+namespace RonaldRoyce\Zfcommandline;
 
 require __DIR__ . '/../../autoload.php';
 
@@ -16,13 +16,13 @@ use Zend\Code\Generator\ValueGenerator;
 
 // use rroyce\zfcommandline\Controller\Plugin\ConsoleParams;
 
-use ronaldroyce\Zfcommandline\Command\ControllerCreateCommand;
-use ronaldroyce\Zfcommandline\Command\ModelCreateCommand;
-use ronaldroyce\Zfcommandline\Command\AppRouteCreateCommand;
-use ronaldroyce\Zfcommandline\Command\ApiRouteCreateCommand;
-use ronaldroyce\Zfcommandline\Command\ViewCreateCommand;
-use ronaldroyce\Zfcommandline\Command\DbQueryGenerateCommand;
-use ronaldroyce\Zfcommandline\Command\ConfigCommand;
+use RonaldRoyce\Zfcommandline\Command\ControllerCreateCommand;
+use RonaldRoyce\Zfcommandline\Command\ModelCreateCommand;
+use RonaldRoyce\Zfcommandline\Command\AppRouteCreateCommand;
+use RonaldRoyce\Zfcommandline\Command\ApiRouteCreateCommand;
+use RonaldRoyce\Zfcommandline\Command\ViewCreateCommand;
+use RonaldRoyce\Zfcommandline\Command\DbQueryGenerateCommand;
+use RonaldRoyce\Zfcommandline\Command\ConfigCommand;
 
 $appConfig = require __DIR__ . '/../../../config/application.config.php';
 if (file_exists(__DIR__ . '/../../../config/development.config.php')) {

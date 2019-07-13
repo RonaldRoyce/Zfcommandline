@@ -1,6 +1,6 @@
 <?php
 
-namespace Zfcommandline\Command;
+namespace RonaldRoyce\Zfcommandline\Command;
 
 use Symfony\Component\Console\Command\Command;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace rroyce\zfcommandline\Command;
+namespace RonaldRoyce\Zfcommandline\Command;
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -9,10 +9,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use ZF\Configuration\ConfigResource;
 use ZF\Configuration\ConfigWriter;
-use ReflectionClass;
-use Zend\View\Model\ViewModel;
-use Zend\View\Renderer\PhpRenderer;
-use Zend\View\Resolver;
 
 class ControllerCreateCommand extends Command {
 	private $serviceManager;
@@ -69,12 +65,11 @@ class ControllerCreateCommand extends Command {
 		$modelName = $input->getArgument('model') . "Model";
 
 		$fullModelClassName = sprintf(
-						'\%s\Model\%s',
-						$this->apiNamespace,
-						$modelName
-					);
-		if (!class_exists($fullModelClassName))
-		{
+			'\%s\Model\%s',
+			$this->apiNamespace,
+			$modelName
+		);
+		if (!class_exists($fullModelClassName)) {
 			$output->writeln("<error>Model $fullModelClassName does not exist</error>");
 			return false;
 		}
@@ -87,45 +82,45 @@ class ControllerCreateCommand extends Command {
 			return;
 		}
 
-                $this->addToConfig($controllerName, $input, $output);
+		$this->addToConfig($controllerName, $input, $output);
 	}
 
 	protected function addToConfig($controllerName, $input, $output) {
 		$config = $this->serviceManager->get('config');
-        	$writer = $this->serviceManager->get(ConfigWriter::class);
+		$writer = $this->serviceManager->get(ConfigWriter::class);
 
-                $writer->setUseClassNameScalars(true);
+		$writer->setUseClassNameScalars(true);
 		$writer->setUseBracketArraySyntax(true);
 
-                $configResource = new ConfigResource($config, $this->projectRootDir . '/module/' . $this->appNamespace . '/config/module.config.php', $writer);
+		$configResource = new ConfigResource($config, $this->projectRootDir . '/module/' . $this->appNamespace . '/config/module.config.php', $writer);
 
-	        $fullClassName = sprintf(
-        	    '%s\\Controller\\%s',
-		    $this->appNamespace,
-	            $controllerName
-	        );
-
-       	 	$factoryClassName = sprintf(
-			'%s\\Factory\\%sFactory', 
+		$fullClassName = sprintf(
+			'%s\\Controller\\%s',
 			$this->appNamespace,
 			$controllerName
 		);
 
-                $configResource->patch([
-                        'controllers' => [
-                                'factories' => [
-                                        $fullClassName => $factoryClassName,
-                                ],
-                        ],
-                ], true);
+		$factoryClassName = sprintf(
+			'%s\\Factory\\%sFactory',
+			$this->appNamespace,
+			$controllerName
+		);
 
-        	$configResource->patch([
-            		'service_manager' => [
-                		'factories' => [
-                    			$fullClassName => $factoryClassName,
-                		],
-            		],
-        	], true);
+		$configResource->patch([
+			'controllers' => [
+				'factories' => [
+					$fullClassName => $factoryClassName,
+				],
+			],
+		], true);
+
+		$configResource->patch([
+			'service_manager' => [
+				'factories' => [
+					$fullClassName => $factoryClassName,
+				],
+			],
+		], true);
 	}
 
 	protected function createController($controllerName, $model, $input, $output) {

@@ -1,25 +1,14 @@
 <?php
 
-namespace Zfcommandline\Command;
+namespace RonaldRoyce\Zfcommandline\Command;
 
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\ChoiceQuestion;
-use ZF\Configuration\ConfigResource;
-use ZF\Configuration\ConfigWriter;
-use ReflectionClass;
-use Zend\View\Model\ViewModel;
-use Zend\View\Renderer\PhpRenderer;
-use Zend\View\Resolver;
 use Symfony\Component\Console\Question\Question;
 use Zend\Db\Adapter\Adapter;
 use Zend\Db\Metadata\Metadata;
-use Zend\Db\Sql\Select;
-use Zend\Db\Sql\Sql;
-use Zend\Db\Sql\TableIdentifier;
 
 class DbQueryGenerateCommand extends Command {
 	private $serviceManager;
@@ -27,21 +16,21 @@ class DbQueryGenerateCommand extends Command {
 	private $appConfig;
 	private $appNamespace;
 	private $adapter;
-        private $driverName;
+	private $driverName;
 
-        public function __construct($serviceManager, $projectRootDir, $appConfig) {
-                $this->serviceManager = $serviceManager;
-                $this->projectRootDir = $projectRootDir;
-                $this->appConfig = $appConfig;
+	public function __construct($serviceManager, $projectRootDir, $appConfig) {
+		$this->serviceManager = $serviceManager;
+		$this->projectRootDir = $projectRootDir;
+		$this->appConfig = $appConfig;
 
-                $this->appNamespace = $appConfig['zfcommandline']['namespaces']['app'];
-                $this->apiNamespace = $appConfig['zfcommandline']['namespaces']['api'];
+		$this->appNamespace = $appConfig['zfcommandline']['namespaces']['app'];
+		$this->apiNamespace = $appConfig['zfcommandline']['namespaces']['api'];
 
-                parent::__construct();
-        }
+		parent::__construct();
+	}
 
 	protected function configure() {
-                $appNamespace = $this->appConfig['zfcommandline']['namespaces']['app'];
+		$appNamespace = $this->appConfig['zfcommandline']['namespaces']['app'];
 
 		$this
 			->setName(strtolower($appNamespace) . ':db:generatequery')
@@ -61,58 +50,49 @@ class DbQueryGenerateCommand extends Command {
 		return true;
 	}
 
-	protected function promptUser($input, $output, $prompt, $default, $mustSpecify)
-	{
-                $helper = $this->getHelper('question');
-                $question = new Question($prompt . ": ", $default);
+	protected function promptUser($input, $output, $prompt, $default, $mustSpecify) {
+		$helper = $this->getHelper('question');
+		$question = new Question($prompt . ": ", $default);
 
-		while (true)
-		{
-                        $response = $helper->ask($input, $output, $question);
+		while (true) {
+			$response = $helper->ask($input, $output, $question);
 
-			if ($mustSpecify && trim($response) == "")
-			{
-				continue;	
-                        }
+			if ($mustSpecify && trim($response) == "") {
+				continue;
+			}
 
 			return $response;
 		}
 	}
 
-        protected function promptChoiceUser($input, $output, $prompt, $choices)
-        {
-                $helper = $this->getHelper('question');
-                $question = new ChoiceQuestion($prompt . ": ", $choices, 1);
+	protected function promptChoiceUser($input, $output, $prompt, $choices) {
+		$helper = $this->getHelper('question');
+		$question = new ChoiceQuestion($prompt . ": ", $choices, 1);
 
-                $response = $helper->ask($input, $output, $question);
+		$response = $helper->ask($input, $output, $question);
 
-                return $response;
-        }
+		return $response;
+	}
 
-	protected function clearScreen($output)
-	{
+	protected function clearScreen($output) {
 		$output->write(sprintf("\033\143"));
 	}
 
-	protected function getMainMenuSelection($tablesSelected, $input, $output)
-	{
+	protected function getMainMenuSelection($tablesSelected, $input, $output) {
 		$errmsg = "";
 
-		while (true)
-		{
+		while (true) {
 			$this->clearScreen($output);
 
 			$output->writeln("     Main Menu");
 			$output->writeln("     =========");
 			$output->writeln("");
 
-			if ($errmsg != "")
-			{
+			if ($errmsg != "") {
 				$output->writeln("<error>$errmsg</error>\n");
 			}
 
-			if (count($tablesSelected) > 0)
-			{
+			if (count($tablesSelected) > 0) {
 				$output->writeln("[1] Join new table");
 				$output->writeln("[2] Define where clause");
 				$output->writeln("[3] Define order by clause");
@@ -121,9 +101,7 @@ class DbQueryGenerateCommand extends Command {
 				$output->writeln("[6] Quit");
 
 				$menuItemCount = 6;
-			}
-			else 
-			{
+			} else {
 				$output->writeln("[1] New table");
 				$output->writeln("[2] Quit");
 
@@ -132,170 +110,146 @@ class DbQueryGenerateCommand extends Command {
 
 			$selection = $this->promptUser($input, $output, "\nEnter 1 to $menuItemCount", "", false);
 
-			if (intval($selection) < 1 || intval($selection) > $menuItemCount)
-			{
+			if (intval($selection) < 1 || intval($selection) > $menuItemCount) {
 				$errmsg = "Invalid selection";
 				continue;
 			}
 
-			if (intval($selection) == $menuItemCount)
-			{
+			if (intval($selection) == $menuItemCount) {
 				return null;
 			}
 
-			return $selection;	
+			return $selection;
 		}
 	}
 
-	protected function getClauseFromUser($input, $output, $clauseName)
-	{
-                $this->clearScreen($output);
+	protected function getClauseFromUser($input, $output, $clauseName) {
+		$this->clearScreen($output);
 
 		$title = ucwords($clauseName);
 
-                $output->writeln("     $title Clause");
-                $output->writeln("     " . str_pad("", strlen($title), '='));
-                $output->writeln("");
+		$output->writeln("     $title Clause");
+		$output->writeln("     " . str_pad("", strlen($title), '='));
+		$output->writeln("");
 
-                $clause = $this->promptUser($input, $output, "Enter " . strtolower($clauseName) . " clause (Leave empty to cancel)", "", false);
+		$clause = $this->promptUser($input, $output, "Enter " . strtolower($clauseName) . " clause (Leave empty to cancel)", "", false);
 
-		if ($clause == "")
-		{
+		if ($clause == "") {
 			return null;
 		}
 
 		return $clause;
 	}
 
-	protected function getColumnsForTable($tableNameInfo, $input, $output)
-	{
-                $columns = $this->getDatabaseColumnNames($tableNameInfo);
+	protected function getColumnsForTable($tableNameInfo, $input, $output) {
+		$columns = $this->getDatabaseColumnNames($tableNameInfo);
 
-                $errmsg = "";
+		$errmsg = "";
 
 		$columnsSelected = array();
 
-                while (true)
-                {
-                        $this->clearScreen($output);
+		while (true) {
+			$this->clearScreen($output);
 
-                        $output->writeln("     Column Selection");
-                        $output->writeln("     ================");
-                        $output->writeln("");
+			$output->writeln("     Column Selection");
+			$output->writeln("     ================");
+			$output->writeln("");
 
-                        if ($errmsg != "")
-                        {
-                                $output->writeln("<error>$errmsg</error>\n");
-                        }
+			if ($errmsg != "") {
+				$output->writeln("<error>$errmsg</error>\n");
+			}
 
-                        $output->writeln("Specify the columns to select for table " . $tableNameInfo["schema"] . "." . $tableNameInfo["table_name"] . ":\n");
+			$output->writeln("Specify the columns to select for table " . $tableNameInfo["schema"] . "." . $tableNameInfo["table_name"] . ":\n");
 
-                        for ($i = 0; $i < count($columns); $i++)
-                        {
+			for ($i = 0; $i < count($columns); $i++) {
 				$selectionChar = " ";
 
-				if (in_array($columns[$i], $columnsSelected))
-				{
+				if (in_array($columns[$i], $columnsSelected)) {
 					$selectionChar = "<info>*</info>";
 				}
 
-                                $output->writeln($selectionChar . str_pad("[" . ($i + 1) . "]", 5, ' ', STR_PAD_LEFT) . " " . $columns[$i]);
-                        }
+				$output->writeln($selectionChar . str_pad("[" . ($i + 1) . "]", 5, ' ', STR_PAD_LEFT) . " " . $columns[$i]);
+			}
 
-                        $output->writeln(" " . str_pad("[" . (count($columns) + 1) . "]", 5, ' ', STR_PAD_LEFT) . " All columns");
-                        $output->writeln(" " . str_pad("[" . (count($columns) + 2) . "]", 5, ' ', STR_PAD_LEFT) . " Done");
+			$output->writeln(" " . str_pad("[" . (count($columns) + 1) . "]", 5, ' ', STR_PAD_LEFT) . " All columns");
+			$output->writeln(" " . str_pad("[" . (count($columns) + 2) . "]", 5, ' ', STR_PAD_LEFT) . " Done");
 			$output->writeln(" " . str_pad("[" . (count($columns) + 3) . "]", 5, ' ', STR_PAD_LEFT) . " Abort table definition");
 
-                        $selection = $this->promptUser($input, $output, "\nEnter 1 to " . (count($columns) + 3), "", true);
+			$selection = $this->promptUser($input, $output, "\nEnter 1 to " . (count($columns) + 3), "", true);
 
-                        if ($selection == "")
-                        {
-				if (count($columnsSelected) == 0)
-				{
-                                       	return null;
+			if ($selection == "") {
+				if (count($columnsSelected) == 0) {
+					return null;
 				}
-			
+
 				return $columnsSelected;
-                        }
+			}
 
-                        if (intval($selection) < 1 || intval($selection) > count($columns) + 3)
-                        {
-                                $errmsg = "Invalid response";
-                                continue;
-                        }
+			if (intval($selection) < 1 || intval($selection) > count($columns) + 3) {
+				$errmsg = "Invalid response";
+				continue;
+			}
 
-			if (intval($selection) == count($columns) + 2 && count($columnsSelected) == 0)
-			{
+			if (intval($selection) == count($columns) + 2 && count($columnsSelected) == 0) {
 				$errmsg = "You haven't selected any columns";
 				continue;
 			}
 
-			if (intval($selection) == count($columns) + 2)
-			{
+			if (intval($selection) == count($columns) + 2) {
 				return $columnsSelected;
 			}
 
-                        if (intval($selection) == count($columns) + 1)
-                        {
-                                $columnsSelected = $columns;
+			if (intval($selection) == count($columns) + 1) {
+				$columnsSelected = $columns;
 				return $columnsSelected;
-                        }
-                                       
-			if (intval($selection) == count($columns) + 3)
-			{
+			}
+
+			if (intval($selection) == count($columns) + 3) {
 				return null;
 			}
- 
-			if (!in_array($columns[intval($selection) - 1], $columnsSelected))
-                        {
-                                $columnsSelected[] = $columns[intval($selection) - 1];
-                        }
+
+			if (!in_array($columns[intval($selection) - 1], $columnsSelected)) {
+				$columnsSelected[] = $columns[intval($selection) - 1];
+			}
 		}
 
 	}
 
-	protected function getTableFromUser($input, $output)
-	{
+	protected function getTableFromUser($input, $output) {
 		$errmsg = "";
 
-		while (true)
-		{
-                        $this->clearScreen($output);
+		while (true) {
+			$this->clearScreen($output);
 
 			$output->writeln("     Table Definition");
 			$output->writeln("     ================");
 			$output->writeln("");
 
-                        if ($errmsg != "")
-                        {
-                                $output->writeln("<error>$errmsg</error>\n");
-                        }
+			if ($errmsg != "") {
+				$output->writeln("<error>$errmsg</error>\n");
+			}
 
 			$tableName = $this->promptUser($input, $output, "Enter table to query (Leave empty to return to previous menu)", "", false);
 
-			if ($tableName == "")
-			{
+			if ($tableName == "") {
 				return null;
 			}
 
 			$tableNameInfo = $this->validateTableName($tableName);
-			if (!$tableNameInfo)
-			{
+			if (!$tableNameInfo) {
 				$errmsg = "Table $tableName does not exist";
 				continue;
 			}
 
-                        $tableAlias = $this->promptUser($input, $output, "\nEnter table alias (Leave empty to return to previous menu)", "", false);
+			$tableAlias = $this->promptUser($input, $output, "\nEnter table alias (Leave empty to return to previous menu)", "", false);
 
-			if (!$tableAlias)
-			{
+			if (!$tableAlias) {
 				return null;
 			}
 
 			$columns = $this->getColumnsForTable($tableNameInfo, $input, $output);
 
-			if (!$columns)
-			{
+			if (!$columns) {
 				continue;
 			}
 
@@ -303,68 +257,59 @@ class DbQueryGenerateCommand extends Command {
 		}
 	}
 
-        protected function getJoinedTableFromUser($input, $output)
-        {
-                $errmsg = "";
+	protected function getJoinedTableFromUser($input, $output) {
+		$errmsg = "";
 
-                while (true)
-                {
-                        $this->clearScreen($output);
+		while (true) {
+			$this->clearScreen($output);
 
-                        $output->writeln("     Table Definition");
-                        $output->writeln("     ================");
-                        $output->writeln("");
+			$output->writeln("     Table Definition");
+			$output->writeln("     ================");
+			$output->writeln("");
 
-                        if ($errmsg != "")
-                        {
-                                $output->writeln("     <error>$errmsg</error>\n");
-                        }
+			if ($errmsg != "") {
+				$output->writeln("     <error>$errmsg</error>\n");
+			}
 
-                        $tableName = $this->promptUser($input, $output, "Enter table to query (Leave empty to return to previous menu)", "", false);
+			$tableName = $this->promptUser($input, $output, "Enter table to query (Leave empty to return to previous menu)", "", false);
 
-                        if ($tableName == "")
-                        {
-                                return null;
-                        }
-
-                        $tableNameInfo = $this->validateTableName($tableName);
-                        if (!$tableNameInfo)
-                        {
-                                $errmsg = "Table $tableName does not exist";
-                                continue;
-                        }
-
-                        $tableAlias = $this->promptUser($input, $output, "Enter table alias (Leave empty to return to previous menu)", "", false);
-
-                        if (!$tableAlias)
-                        {
-                                return null;
-                        }
-
-                        $columns = $this->getColumnsForTable($tableNameInfo, $input, $output);
-
-                        if (!$columns)
-                        {
-                                continue;
-                        }
-
-                        $tableJoinClause = $this->promptUser($input, $output, "Enter table join condition (Leave empty to return to previous menu)", "", false);
-
-                        if (!$tableJoinClause)
-                        {
-                                return null;
-                        }
-
-			$joinType = $this->promptChoiceUser($input, $output, "Specify join type (INNER, OUTER, LEFT, RIGHT)", ['INNER', 'OUTER', 'LEFT', 'RIGHT', 'Return to previous menu']);
-
-			if ($joinType == "Return to previous menu")
-			{
+			if ($tableName == "") {
 				return null;
 			}
 
-                        return array("table" => $tableNameInfo, "table_alias" => $tableAlias, "columns" => $columns, "table_join" => $tableJoinClause, "join_type" => $joinType);
-                }
-        }
+			$tableNameInfo = $this->validateTableName($tableName);
+			if (!$tableNameInfo) {
+				$errmsg = "Table $tableName does not exist";
+				continue;
+			}
+
+			$tableAlias = $this->promptUser($input, $output, "Enter table alias (Leave empty to return to previous menu)", "", false);
+
+			if (!$tableAlias) {
+				return null;
+			}
+
+			$columns = $this->getColumnsForTable($tableNameInfo, $input, $output);
+
+			if (!$columns) {
+				continue;
+			}
+
+			$tableJoinClause = $this->promptUser($input, $output, "Enter table join condition (Leave empty to return to previous menu)", "", false);
+
+			if (!$tableJoinClause) {
+				return null;
+			}
+
+			$joinType = $this->promptChoiceUser($input, $output, "Specify join type (INNER, OUTER, LEFT, RIGHT)", ['INNER', 'OUTER', 'LEFT', 'RIGHT', 'Return to previous menu']);
+
+			if ($joinType == "Return to previous menu") {
+				return null;
+			}
+
+			return array("table" => $tableNameInfo, "table_alias" => $tableAlias, "columns" => $columns, "table_join" => $tableJoinClause, "join_type" => $joinType);
+		}
+	}
 
 	protected function execute(InputInterface $input, OutputInterface $output) {
 		if (!$this->validConsoleConfiguration($input)) {
@@ -380,44 +325,35 @@ class DbQueryGenerateCommand extends Command {
 		$orderByClause = "";
 		$groupByClause = "";
 
-		while (true)
-		{
+		while (true) {
 			$selection = $this->getMainMenuSelection($tablesSelected, $input, $output);
-			if (!$selection)
-			{
+			if (!$selection) {
 				break;
 			}
 
-			switch ($selection)
-			{
+			switch ($selection) {
 			case "1":
-				if (count($tablesSelected) == 0)
-				{
+				if (count($tablesSelected) == 0) {
 					$tableInfo = $this->getTableFromUser($input, $output);
-				}
-				else
-				{
+				} else {
 					$tableInfo = $this->getJoinedTableFromUser($input, $output);
 				}
 
-                                if (!$tableInfo)
-                                {
-                                        continue;
-                                }
+				if (!$tableInfo) {
+					continue;
+				}
 
-                                $tablesSelected[] = $tableInfo;
+				$tablesSelected[] = $tableInfo;
 
 				break;
 			case "2":
-				if (count($tablesSelected) == 0)
-				{
+				if (count($tablesSelected) == 0) {
 					return;
 				}
 
 				$where = $this->getClauseFromUser($input, $output, "Where");
 
-				if (!$where)
-				{
+				if (!$where) {
 					continue;
 				}
 
@@ -425,25 +361,23 @@ class DbQueryGenerateCommand extends Command {
 
 				break;
 			case "3":
-                                $order = $this->getClauseFromUser($input, $output, "Order By");
+				$order = $this->getClauseFromUser($input, $output, "Order By");
 
-                                if (!$order)
-                                {
-                                        continue;
-                                }
+				if (!$order) {
+					continue;
+				}
 
-                                $orderByClause = $order;
+				$orderByClause = $order;
 
 				break;
 			case "4":
-                                $group = $this->getClauseFromUser($input, $output, "Group By");
+				$group = $this->getClauseFromUser($input, $output, "Group By");
 
-                                if (!$group)
-                                {
-                                        continue;
-                                }
+				if (!$group) {
+					continue;
+				}
 
-                                $groupByClause = $group;
+				$groupByClause = $group;
 
 				break;
 			case "5":
@@ -455,33 +389,27 @@ class DbQueryGenerateCommand extends Command {
 		}
 	}
 
-	protected function arrayToString($a)
-	{
+	protected function arrayToString($a) {
 		$str = "[";
 
-                $firstTime = true;
+		$firstTime = true;
 
-                foreach ($a as $col)
-                {
-                        if (!$firstTime)
-                        {
-                                $str .= ", ";
-                        }
-                        else
-                        {
-                                $firstTime = false;
-                        }
+		foreach ($a as $col) {
+			if (!$firstTime) {
+				$str .= ", ";
+			} else {
+				$firstTime = false;
+			}
 
-                        $str .= "'$col'";
-                }
+			$str .= "'$col'";
+		}
 
 		$str .= "]";
 
 		return $str;
 	}
 
-	protected function generateSelect($tablesSelected, $whereClause, $orderByClause, $groupByClause, $output)
-	{
+	protected function generateSelect($tablesSelected, $whereClause, $orderByClause, $groupByClause, $output) {
 		$str = "
 		\$adapter = \$container->get('dbconnection');
 
@@ -496,8 +424,7 @@ class DbQueryGenerateCommand extends Command {
 		$str .= "
                         ->columns(" . $this->arrayToString($tablesSelected[0]['columns']) . ")";
 
-		for ($i = 1; $i < count($tablesSelected); $i++)
-		{
+		for ($i = 1; $i < count($tablesSelected); $i++) {
 			$str .= "
                         ->join(['" . $tablesSelected[$i]["table_alias"] . "' =>  new TableIdentifier('" . $tablesSelected[$i]['table']['table_name'] . "', '" . $tablesSelected[0]['table']['schema'] . "')],
                                 '" . $tablesSelected[$i]["table_join"] . "',
@@ -506,23 +433,20 @@ class DbQueryGenerateCommand extends Command {
                               )";
 		}
 
-		if ($whereClause != "")
-		{
+		if ($whereClause != "") {
 			$str .= "
                         ->where('" . $whereClause . "')";
 		}
 
-                if ($groupByClause != "")
-                {
-                        $str .= "
+		if ($groupByClause != "") {
+			$str .= "
                         ->group('" . $groupByClause . "')";
-                }
+		}
 
-                if ($orderByClause != "")
-                {
-                        $str .= "
+		if ($orderByClause != "") {
+			$str .= "
                         ->order('" . $orderByClause . "')";
-                }
+		}
 
 		$str .= ";\n
                 \$statement = \$sql->prepareStatementForSqlObject(\$select);
@@ -540,42 +464,36 @@ class DbQueryGenerateCommand extends Command {
 		$output->writeln("<info>$str\n</info>");
 	}
 
-	protected function parseTableName($tableName)
-	{
-                $schema = "tsop";
-                $tblName = $tableName;
+	protected function parseTableName($tableName) {
+		$schema = "tsop";
+		$tblName = $tableName;
 
-                $pos = stripos($tableName, ".");
+		$pos = stripos($tableName, ".");
 
-                if ($pos !== FALSE)
-                {
-                        $schema = substr($tableName, 0, $pos);
-                        $tblName = substr($tableName, $pos + 1);
-                }
+		if ($pos !== FALSE) {
+			$schema = substr($tableName, 0, $pos);
+			$tblName = substr($tableName, $pos + 1);
+		}
 
 		return array("schema" => $schema, "table_name" => $tblName);
 	}
 
-        protected function validateTableName($tableName)
-        {
+	protected function validateTableName($tableName) {
 		$tableInfo = $this->parseTableName($tableName);
 
-                $metadata = new Metadata($this->adapter);
+		$metadata = new Metadata($this->adapter);
 
 		try
 		{
-                	$table = $metadata->getTable($tableInfo["table_name"]);
-		}
-		catch(\Exception $ex)
-		{
+			$table = $metadata->getTable($tableInfo["table_name"]);
+		} catch (\Exception $ex) {
 			return null;
 		}
 
 		return $tableInfo;
-        }
+	}
 
-	protected function getDatabaseColumnNames($tableNameInfo)
-	{
+	protected function getDatabaseColumnNames($tableNameInfo) {
 		$metadata = new Metadata($this->adapter);
 
 		$table = $metadata->getTable($tableNameInfo["table_name"]);
